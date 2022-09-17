@@ -7,7 +7,7 @@ from util.console import console
 def getSumTableRowPosition(doc) -> list[tuple[int, int]]: ...
 
 
-sum_table_row_position = getSumTableRowPosition(docx.Document("D:/Code/contract_searcher/CoE Template.docx"))
+sum_table_row_position = getSumTableRowPosition(docx.Document("./CoE Template.docx"))
 
 
 def getSumTableRowPosition(doc) -> dict[int, tuple[int, int]]:

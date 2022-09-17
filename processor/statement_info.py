@@ -97,7 +97,7 @@ statement_dict: dict[str, StatementInfo] = {
     ),
     "fairness": StatementInfo(
         position=(0, 10),
-        check_rule=AnyRegexFulfilled("fair(?:ness)?")
+        check_rule=AnyRegexFulfilled("\\bfair(?:ness)?\\b")
     ),
     "integrity": StatementInfo(
         position=(0, 11),
@@ -340,7 +340,7 @@ statement_dict: dict[str, StatementInfo] = {
     "travel_c": StatementInfo(
         position=(3, 5),
         check_rule=NearbyPageMatching(
-            trigger_regexs=["travel", "entertainment"],
+            trigger_regexs=["\\btravel\\b", "entertainment"],
             search_nearby_regexs=["gain", "lose"]
         )
     ),
@@ -374,7 +374,7 @@ statement_dict: dict[str, StatementInfo] = {
     ),
     "equal_b": StatementInfo(
         position=(3, 12),
-        check_rule=AnyRegexFulfilled("\\brace\\b", "religion", "national\\s+origin", "\\bsex\\b", "\\bage\\b")
+        check_rule=AnyRegexFulfilled("\\brace\\b", "religion", "national\\s+origin", "\\bsex\\b")
 
     ),
     "equal_c": StatementInfo(

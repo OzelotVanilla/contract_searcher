@@ -20,6 +20,10 @@ def checkDocument(pdf_path: str) -> dict[str, bool]:
     # If find near, search may cross the page.
     # Read pages by pages until end
     with PDFFile(pdf_path) as pdf_file:
+        # Clear previous reach_percentage dict
+        global file_check_reach_percentage_result
+        file_check_reach_percentage_result.clear()
+
         for page_index in range(len(pdf_file)):
             # Always read next page, shuffle previous
             previous_page_text, current_page_text, next_page_text = pdf_file.getPageAndNearby(page_index)
@@ -52,7 +56,7 @@ def checkDocument(pdf_path: str) -> dict[str, bool]:
                                     "- nearby text at page ", match_info.nearby_at_page, ":",
                                     colour_rgb="f7b977", sep=""
                                 )
-                                console.sublog("    " + match_info.nearby_text.replace("\n", " "))
+                                console.sublog("    " + match_info.nearby_text.replace("\n", " ") + "\n")
                         else:  # match_info unfortunately wrong.
                             console.err("Unexpected none match_info")
                             raise NotImplementedError("match_info: ", match_info)
@@ -190,11 +194,11 @@ def getTextAroundInPage(text: str, target_left_index: int, target_right_index: i
     text_around_end = (target_right_index + around_n_char) \
         if (target_right_index + around_n_char < str_max_len) else str_max_len - 1
 
-    return ""                                            \
-        + text[text_around_start:target_left_index]      \
-        + "\033[38;2;62;179;112m" if use_colour else ""  \
-        + text[target_left_index:target_right_index]     \
-        + "\033[39m" if use_colour else ""               \
+    return ""                                              \
+        + text[text_around_start:target_left_index]        \
+        + ("\033[38;2;62;179;112m" if use_colour else "")  \
+        + text[target_left_index:target_right_index]       \
+        + ("\033[39m" if use_colour else "")           \
         + text[target_right_index:text_around_end]
 
 
@@ -205,7 +209,7 @@ def getTextAroundCrossPage(current_text: str, previous_text: str, next_text: str
     left_around_text: str = None
     if target_left_index < around_n_char:
         # Include text from previous page
-        left_around_text = previous_text[-1 - (around_n_char - target_left_index)                                         :-1] + current_text[0:target_left_index]
+        left_around_text = previous_text[-1 - (around_n_char - target_left_index):-1] + current_text[0:target_left_index]
     else:
         left_around_text = current_text[target_left_index - around_n_char:target_left_index]
 
@@ -220,9 +224,9 @@ def getTextAroundCrossPage(current_text: str, previous_text: str, next_text: str
 
     return ""                                                 \
         + left_around_text                                    \
-        + "\033[38;2;62;179;112m" if use_colour else ""       \
+        + ("\033[38;2;62;179;112m" if use_colour else "")     \
         + current_text[target_left_index:target_right_index]  \
-        + "\033[39m" if use_colour else ""                    \
+        + ("\033[39m" if use_colour else "")                  \
         + right_around_text
 
 
