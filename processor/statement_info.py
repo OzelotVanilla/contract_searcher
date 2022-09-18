@@ -144,11 +144,12 @@ statement_dict: dict[str, StatementInfo] = {
             search_nearby_regexs=["gift", "entertainment"]
         )
     ),
-    "giftdisclo": StatementInfo(
+    "gift_disclose": StatementInfo(
         position=(0, 21),
-        check_rule=NearbyPageMatching(
+        check_rule=NearbyCharMatching(
             trigger_regexs=["gift"],
-            search_nearby_regexs=["disclose", "disclosure"]
+            search_nearby_regexs=["disclose", "disclosure"],
+            near_n_char=60
         )
     ),
     "giftnominal": StatementInfo(
@@ -341,7 +342,7 @@ statement_dict: dict[str, StatementInfo] = {
         position=(3, 5),
         check_rule=NearbyPageMatching(
             trigger_regexs=["\\btravel\\b", "entertainment"],
-            search_nearby_regexs=["gain", "lose"]
+            search_nearby_regexs=["\\bgain\\b", "\\blose\\b"]
         )
     ),
     "political_a": StatementInfo(
@@ -417,9 +418,10 @@ statement_dict: dict[str, StatementInfo] = {
     ),
     "inducement_b": StatementInfo(
         position=(4, 5),
-        check_rule=NearbyPageMatching(
+        check_rule=NearbyCharMatching(
             trigger_regexs=["payment"],
-            search_nearby_regexs=["reasonable", "meaningful", "justified", "properly"]
+            search_nearby_regexs=["reasonable", "meaningful", "justified", "properly"],
+            near_n_char=7
         )
     ),
     "inducement_c": StatementInfo(
@@ -445,9 +447,10 @@ statement_dict: dict[str, StatementInfo] = {
     ),
     "inducement_f": StatementInfo(
         position=(4, 9),
-        check_rule=NearbyPageMatching(
+        check_rule=NearbyCharMatching(
             trigger_regexs=["payment"],
-            search_nearby_regexs=["legal", "necessary", "meaningful", "reasonable", "proper"]
+            search_nearby_regexs=["legal", "necessary", "meaningful", "reasonable", "proper"],
+            near_n_char=7
         )
     ),
     "insider_a": StatementInfo(

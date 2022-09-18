@@ -186,10 +186,7 @@ def checkNearbyCharMatching(check_rule: NearbyCharMatching, rule_name: str,
                             trigger_range[0], trigger_range[1]
                         ),
                         nearby_at_page=page_num,
-                        nearby_text=getTextAroundCrossPage(
-                            current_page_text, previous_page_text, next_page_text,
-                            nearby_range[0], nearby_range[1]
-                        )
+                        nearby_text=highlightText(text_nearby, nearby_range[0], nearby_range[1])
                     )
 
                     return (True, match_info)
@@ -241,6 +238,13 @@ def getTextAroundCrossPage(current_text: str, previous_text: str, next_text: str
         + ("\033[39m" if use_colour else "")                  \
         + right_around_text
 
+def highlightText(text: str, range_left: int, range_right: int) -> str:
+    return "" \
+        + text[0:range_left] \
+        + "\033[38;2;62;179;112m" \
+        + text[range_left:range_right] \
+        + "\033[39m" \
+        + text[range_right:len(text)]
 
 # {"rule_name": num_of_fulfilled}, example: {"rule_a": 3}, rule_a has 4 members, 3 fulfilled.
 file_check_reach_percentage_result: dict[str, list[int]] = dict()

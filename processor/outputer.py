@@ -148,7 +148,7 @@ def writeFinalResultToExcel() -> None:
 
     pandas.DataFrame(each_file_totals_information).transpose().rename(
         columns={"mandatory": "Mandatory", "strongly_suggested": "Strongly Suggested", "desirable": "Desirable"}
-    ).to_excel("./result/Totals.xlsx")
+            ).to_excel("./result/Totals.xlsx")
 
 
 def calculateAccuracy(standard_file_path: str, summoned_file_path: str):
