@@ -1,5 +1,6 @@
 import docx
 import re
+import pandas
 from processor.statement_info import statement_dict
 from util.console import console
 
@@ -7,7 +8,9 @@ from util.console import console
 def getSumTableRowPosition(doc) -> list[tuple[int, int]]: ...
 
 
-sum_table_row_position = getSumTableRowPosition(docx.Document("./CoE Template.docx"))
+sum_table_row_position = None
+
+each_file_totals_information: dict[str, dict[str, int]] = None
 
 
 def getSumTableRowPosition(doc) -> dict[int, tuple[int, int]]:
@@ -73,7 +76,7 @@ def calculateSumedNumber(doc) -> dict[int, int]:
     return totals
 
 
-def writeResultToWord(word_file_path: str, result_dict: dict[str, bool]) -> None:
+def writeResultToWord(word_file_path: str, result_dict: dict[str, bool], company_name: str) -> None:
     result_word_file = docx.Document(word_file_path)
 
     # Fill cell with result
@@ -89,16 +92,19 @@ def writeResultToWord(word_file_path: str, result_dict: dict[str, bool]) -> None
 
     # Fill the "sum" cell
     console.sublog("Filling sum cells", colour_rgb="b19a00", end="")
-    fillSumValToCell(result_word_file)
+    fillSumValToCell(result_word_file, company_name)
     print(" ... done")
 
     # Save result
     result_word_file.save(word_file_path)
 
 
-def fillSumValToCell(doc) -> None:
+def fillSumValToCell(doc, company_name: str) -> None:
     # First calculate the sum-ed value
     sumed_value_dict = calculateSumedNumber(doc)
+
+    # Also add it to record
+    addDocumentFinalResultToRecord(company_name, sumed_value_dict)
 
     # Fill it into corresponding cell
     global sum_table_row_position
@@ -107,6 +113,42 @@ def fillSumValToCell(doc) -> None:
     for (sum_cell_index, sum_value) in sumed_value_dict.items():
         table_index, row_index = sum_table_row_position[sum_cell_index]
         doc.tables[table_index].rows[row_index].cells[5].text = str(sum_value)
+
+
+def addDocumentFinalResultToRecord(company_name: str, value_dict: dict[int, int]) -> None:
+    global each_file_totals_information
+    if each_file_totals_information == None:
+        each_file_totals_information = dict()
+
+    mandatory: int = 0
+    strongly_suggested: int = 0
+    desirable: int = 0
+
+    for (rule_index, score) in value_dict.items():
+        if 1 <= rule_index <= 12:
+            mandatory += score
+        elif 13 <= rule_index <= 16:
+            strongly_suggested += score
+        elif 17 <= rule_index <= 20:
+            desirable += score
+        else:
+            raise IndexError(f"Must not have key {rule_index} with value {score} in the dict")
+
+    each_file_totals_information[company_name] = {
+        "mandatory": mandatory, "strongly_suggested": strongly_suggested, "desirable": desirable
+    }
+
+
+def writeFinalResultToExcel() -> None:
+    global each_file_totals_information
+    if each_file_totals_information == None:
+        raise ModuleNotFoundError("The variable each_file_totals_information is not created.")
+
+    console.info("Filling total.xlsx")
+
+    pandas.DataFrame(each_file_totals_information).transpose().rename(
+        columns={"mandatory": "Mandatory", "strongly_suggested": "Strongly Suggested", "desirable": "Desirable"}
+    ).to_excel("./result/Totals.xlsx")
 
 
 def calculateAccuracy(standard_file_path: str, summoned_file_path: str):

@@ -7,7 +7,16 @@ from util.console import console
 
 
 class MatchResultInfo:
-    ...
+    trigget_at_page: int
+    trigger_text: str
+    nearby_at_page: int | None
+    nearby_text: str | None
+
+    def __init__(self, trigget_at_page: int, trigger_text: str, nearby_at_page: int = None, nearby_text: str = None) -> None:
+        self.trigget_at_page = trigget_at_page
+        self.trigger_text = trigger_text
+        self.nearby_at_page = nearby_at_page
+        self.nearby_text = nearby_text
 
 
 def checkDocument(pdf_path: str) -> dict[str, bool]:
@@ -56,7 +65,9 @@ def checkDocument(pdf_path: str) -> dict[str, bool]:
                                     "- nearby text at page ", match_info.nearby_at_page, ":",
                                     colour_rgb="f7b977", sep=""
                                 )
-                                console.sublog("    " + match_info.nearby_text.replace("\n", " ") + "\n")
+                                console.sublog("    " + match_info.nearby_text.replace("\n", " "))
+
+                            print()  # Give a blank line to next "Found"
                         else:  # match_info unfortunately wrong.
                             console.err("Unexpected none match_info")
                             raise NotImplementedError("match_info: ", match_info)
@@ -209,7 +220,8 @@ def getTextAroundCrossPage(current_text: str, previous_text: str, next_text: str
     left_around_text: str = None
     if target_left_index < around_n_char:
         # Include text from previous page
-        left_around_text = previous_text[-1 - (around_n_char - target_left_index):-1] + current_text[0:target_left_index]
+        left_around_text = previous_text[-1 - (around_n_char - target_left_index)
+                                               :-1] + current_text[0:target_left_index]
     else:
         left_around_text = current_text[target_left_index - around_n_char:target_left_index]
 
