@@ -9,7 +9,7 @@ from util.console import console
 console.info("Starting program")
 
 # Read each PDF file
-for pdf_file_path in ["./pdf/Yum.pdf", "./pdf/western digital.pdf", "./pdf/Western Union.pdf"]:
+for pdf_file_path in ["./pdf/CATERPILLAR’S Code of Conduct.pdf",]:
     # for pdf_file_path in getPDFFilePathGenerator("./pdf/"):
     # Name of result word file
     company_name = " ".join(os.path.split(pdf_file_path)[-1].split(".")[0:-1])

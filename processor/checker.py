@@ -134,10 +134,22 @@ def checkNearbyPagesMatching(check_rule: NearbyPageMatching, rule_name: str,
             for nearby_regex in check_rule.search_nearby_regexs:
                 # Search nearby in two nearby pages
                 previous_result = nearby_regex.search(previous_page_text)
+                current_result=nearby_regex.search(current_page_text)
                 next_result = nearby_regex.search(next_page_text)
                 # If found corresponding nearby
-                if previous_result != None or next_result != None:
+                if previous_result != None or current_result != None or next_result != None:
                     trigger_range = trigger_result.span()
+                    final_result_span = None
+                    final_text = None
+                    if previous_result != None:
+                        final_result_span = previous_result.span()
+                        final_text = previous_page_text
+                    elif current_result != None:
+                        final_result_span = current_result.span()
+                        final_text = current_page_text
+                    elif next_result != None:
+                        final_result_span = next_result.span()
+                        final_text = next_page_text
                     match_info = MatchResultInfo(
                         trigget_at_page=page_num,
                         trigger_text=getTextAroundCrossPage(
@@ -146,9 +158,8 @@ def checkNearbyPagesMatching(check_rule: NearbyPageMatching, rule_name: str,
                         ),
                         nearby_at_page=(page_num - 1) if previous_result != None else page_num + 1,
                         nearby_text=getTextAroundInPage(
-                            previous_page_text if previous_result != None else next_page_text,
-                            (previous_result.span() if previous_result != None else next_result.span())[0],
-                            (previous_result.span() if previous_result != None else next_result.span())[1]
+                            final_text,
+                            final_result_span[0], final_result_span[1]
                         )
                     )
 

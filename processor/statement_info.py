@@ -84,7 +84,7 @@ statement_dict: dict[str, StatementInfo] = {
     "report_code_violation": StatementInfo(
         position=(0, 5),
         check_rule=AnyRegexFulfilled(
-            "investigate", "report (?:concern|issue)", "hotline", "anonymous", "retaliation"
+            "investigate", "report.+(?:concern|issue)", "hotline", "anonymous", "retaliation"
         )
     ),
     "sox_406": StatementInfo(
@@ -120,7 +120,7 @@ statement_dict: dict[str, StatementInfo] = {
     ),
     "conflict": StatementInfo(
         position=(0, 15),
-        check_rule=AnyRegexFulfilled("conflict\\s+of\\s+interest")
+        check_rule=AnyRegexFulfilled("conflicts?\\s+of\\s+interest")
     ),
     "assets": StatementInfo(
         position=(0, 16),
@@ -154,14 +154,20 @@ statement_dict: dict[str, StatementInfo] = {
     ),
     "giftnominal": StatementInfo(
         position=(0, 22),
-        check_rule=NearbyPageMatching(
-            trigger_regexs=["gift"],
-            search_nearby_regexs=["nominal", "logo"]
+        check_rule=AnyRegexFulfilled(
+            r"gift.*\bnominal\b", r"gift.*\blogo\b",
         )
     ),
+    #"giftnominal": StatementInfo(
+    #    position=(0, 22),
+    #    check_rule=NearbyPageMatching(
+    #        trigger_regexs=["gift"],
+    #        search_nearby_regexs=["nominal", "logo"]
+    #    )
+    #),
     "conflict_a": StatementInfo(
         position=(1, 3),
-        check_rule=AnyRegexFulfilled("conflict\\s+of\\s+interest")
+        check_rule=AnyRegexFulfilled("conflicts?\\s+of\\s+interest")
     ),
     "conflict_b": StatementInfo(
         position=(1, 4),
@@ -173,32 +179,32 @@ statement_dict: dict[str, StatementInfo] = {
     "conflict_c": StatementInfo(
         position=(1, 5),
         check_rule=NearbyPageMatching(
-            trigger_regexs=["conflict\\s+of\\s+interest"],
+            trigger_regexs=["conflicts?\\s+of\\s+interest"],
             search_nearby_regexs=["disclose", "disclosure"]
         )
     ),
     "conflict_d1": StatementInfo(
         position=(1, 7),
         check_rule=NearbyPageMatching(
-            trigger_regexs=["conflict\\s+of\\s+interest"],
+            trigger_regexs=["conflicts?\\s+of\\s+interest"],
             search_nearby_regexs=["family.+(?:competitor|third|financial\\s+interest|supplier|franchise)"]
         )
     ),
     "conflict_d2": StatementInfo(
         position=(1, 8),
         check_rule=NearbyPageMatching(
-            trigger_regexs=["conflict\\s+of\\s+interest"],
+            trigger_regexs=["conflicts?\\s+of\\s+interest"],
             search_nearby_regexs=[
-                "serv(?:e|ing)\\s+as.+(?:director|officer|partner|consult|contactor|competitor)"
+                "serv(?:e|ing|ice)\\s+as.+(?:director|officer|partner|consult|contactor|competitor)", "outside\\s+ employ.+(?:director|officer|partner|consult|contactor|competitor)"
             ]
         )
     ),
     "conflict_d3": StatementInfo(
         position=(1, 9),
         check_rule=NearbyPageMatching(
-            trigger_regexs=["conflict\\s+of\\s+interest"],
+            trigger_regexs=["conflicts?\\s+of\\s+interest"],
             search_nearby_regexs=[
-                "serv(?:e|ing)\\s+ as.+(?:broker|finder|intermediary|third\\s+party)"
+                "serv(?:e|ing|ice)\\s+ as.+(?:broker|finder|intermediary|third\\s+party)", "outside\\s+ employ.+(?:broker|finder|intermediary|third\\s+party)"
             ]
 
         )
@@ -206,14 +212,14 @@ statement_dict: dict[str, StatementInfo] = {
     "conflict_d4": StatementInfo(
         position=(1, 10),
         check_rule=NearbyPageMatching(
-            trigger_regexs=["conflict\\s+of\\s+interest"],
+            trigger_regexs=["conflicts?\\s+of\\s+interest"],
             search_nearby_regexs=["family", "friend"]
         )
     ),
     "conflict_e": StatementInfo(
         position=(1, 11),
         check_rule=NearbyPageMatching(
-            trigger_regexs=["conflict\\s+of\\s+interest"],
+            trigger_regexs=["conflicts?\\s+of\\s+interest"],
             search_nearby_regexs=["sign\\s+annually"]
         )
     ),
@@ -228,34 +234,38 @@ statement_dict: dict[str, StatementInfo] = {
         position=(1, 14),
         check_rule=NearbyPageMatching(
             trigger_regexs=["protect", "safeguard"],
-            search_nearby_regexs=["physical\\s+asset", "equipment", "material", "inventory"]
+            search_nearby_regexs=[r"(?:physical|tangible)", "equipment", "material", "inventory"]
         )
     ),
     "assets_c": StatementInfo(
         position=(1, 15),
-        check_rule=NearbyPageMatching(
-            trigger_regexs=["protect", "safeguard"],
-            search_nearby_regexs=["confidential", "data"]
+        check_rule=NearbyCharMatching(
+            trigger_regexs=["confidential" , r"\bdata\b"],
+            search_nearby_regexs=["protect", "safeguard"],
+            near_n_char=150
         )
     ),
     "record_a": StatementInfo(
         position=(2, 3),
         check_rule=NearbyPageMatching(
             trigger_regexs=["accurate", "complete"],
-            search_nearby_regexs=["record", "book", "information", "report", "disclosure"]
+            search_nearby_regexs=["record", "book", "information", "report", "disclosure"],
         )
     ),
     "record_b": StatementInfo(
         position=(2, 4),
         check_rule=NearbyPageMatching(
             trigger_regexs=["record", "book", "information", "report", "disclosure"],
-            search_nearby_regexs=["improper", "misleading", "incomplete", "fraudulent", "inaccurate", "false"]
+            search_nearby_regexs=["improper", "misleading", "incomplete", "fraudulent", "inaccurate", "false"],
         )
     ),
     "record_c": StatementInfo(
         position=(2, 5),
-        check_rule=AnyRegexFulfilled(
-            "accounting\\s+misclassifications, improperly\\s+accelerating, defe(?:r|rring)\\s+expenses, defe(?:r|rring)\\s+revenues")
+        check_rule=NearbyPageMatching(
+            trigger_regexs=["accounting", "defe(?:r|rring)"],
+            search_nearby_regexs=["(?:follow|comply)\\s.+(?:law|polic|principle|gaap)","misclassifications", "improperly\\s+accelerating", "defe(?:r|rring)\\s+expenses", "defe(?:r|rring)\\s+revenues"],
+            )
+        
     ),
     "record_d": StatementInfo(
         position=(2, 6),
@@ -306,7 +316,7 @@ statement_dict: dict[str, StatementInfo] = {
         position=(2, 14),
         check_rule=NearbyPageMatching(
             trigger_regexs=["\\breport"],
-            search_nearby_regexs=["terminat(?:e|ing)", "consequence\\s+violat"]
+            search_nearby_regexs=["terminat(?:e|ing)", "consequence\\s+violat", "\\discharge\\b", "criminal"]
         )
     ),
     "compliance_e": StatementInfo(
@@ -380,7 +390,10 @@ statement_dict: dict[str, StatementInfo] = {
     ),
     "equal_c": StatementInfo(
         position=(3, 13),
-        check_rule=AnyRegexFulfilled("harassment")
+        check_rule=NearbyPageMatching(
+            trigger_regexs=["haras(?:s|sment)"],
+            search_nearby_regexs=["tolerate", "forbidden", "prohibit"]
+            )
 
     ),
     "anti_a": StatementInfo(
@@ -455,22 +468,22 @@ statement_dict: dict[str, StatementInfo] = {
     ),
     "insider_a": StatementInfo(
         position=(4, 11),
-        check_rule=AnyRegexFulfilled("inside\\s+information", "inside\\s+trade")
+        check_rule=AnyRegexFulfilled("insider?\\s+(?:information|trad(?:e|ing))\\b")
 
     ),
     "insider_b": StatementInfo(
         position=(4, 12),
         check_rule=NearbyPageMatching(
-            trigger_regexs=["confidential"],
+            trigger_regexs=["confidential","insid(?:e|er)"],
             search_nearby_regexs=["personal\\s+gain", "personal\\s+profit"]
         )
     ),
     "insider_c": StatementInfo(
         position=(4, 13),
         check_rule=NearbyPageMatching(
-            trigger_regexs=["confidential"],
-            search_nearby_regexs=["Insider\\s+trade", "security"]
-        )
+            trigger_regexs=["confidential","insid(?:e|er)"],
+            search_nearby_regexs=["stock", "securit(?:y|ies)"]
+        )   
     ),
     "boycott_a": StatementInfo(
         position=(5, 3),
