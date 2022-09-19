@@ -1,3 +1,4 @@
+import re
 from typing import Callable
 from processor.reader import PDFFile, getReadByPagesGenerator
 from processor.statement_info import ItemMatchingRule, AnyRegexFulfilled, ReachPercentage, NearbyPageMatching, NearbyCharMatching
@@ -33,9 +34,41 @@ def checkDocument(pdf_path: str) -> dict[str, bool]:
         global file_check_reach_percentage_result
         file_check_reach_percentage_result.clear()
 
+        skip_n_page = 1
+        have_found_content_page = False
+        skip_conten_page_finished = False
+        content_checker = re.compile(r"(?:table\s+of\s+)contents?")
+
         for page_index in range(len(pdf_file)):
             # Always read next page, shuffle previous
             previous_page_text, current_page_text, next_page_text = pdf_file.getPageAndNearby(page_index)
+
+            # Skip for "table of content" pages
+            # crude: only skip first page matches "(?:table\sof\s)contents?", and its next page
+            # If content not skipped
+            if not skip_conten_page_finished:
+                # Check if already found first content page
+                if have_found_content_page:
+                    # Skip required pages
+                    if skip_n_page > 0:
+                        console.sublog(f"Skipping page {page_index}:", colour_rgb="f6ad49")
+                        console.sublog(current_page_text.replace("\n", "  ")[0:60])
+                        print()
+                        skip_n_page -= 1
+                        continue
+                    if skip_n_page == 0:  # Skip page finished
+                        console.sublog(f"No longer need to skip after page {page_index}:", colour_rgb="f6ad49")
+                        console.sublog(current_page_text.replace("\n", "  ")[0:60])
+                        print()
+                        skip_conten_page_finished = True
+                else:
+                    # Check if this page is content page
+                    have_found_content_page = (content_checker.search(current_page_text) != None)
+                    if have_found_content_page:  # this page is content
+                        console.sublog(f"Found content at page {page_index}:", colour_rgb="f6ad49")
+                        console.sublog(current_page_text.replace("\n", "  ")[0:60])
+                        print()
+                        continue
 
             # Check each page by all rules
             for rule_name in statement_dict.keys():
@@ -134,7 +167,7 @@ def checkNearbyPagesMatching(check_rule: NearbyPageMatching, rule_name: str,
             for nearby_regex in check_rule.search_nearby_regexs:
                 # Search nearby in two nearby pages
                 previous_result = nearby_regex.search(previous_page_text)
-                current_result=nearby_regex.search(current_page_text)
+                current_result = nearby_regex.search(current_page_text)
                 next_result = nearby_regex.search(next_page_text)
                 # If found corresponding nearby
                 if previous_result != None or current_result != None or next_result != None:
@@ -228,8 +261,7 @@ def getTextAroundCrossPage(current_text: str, previous_text: str, next_text: str
     left_around_text: str = None
     if target_left_index < around_n_char:
         # Include text from previous page
-        left_around_text = previous_text[-1 - (around_n_char - target_left_index)
-                                               :-1] + current_text[0:target_left_index]
+        left_around_text = previous_text[-1 - (around_n_char - target_left_index):-1] + current_text[0:target_left_index]
     else:
         left_around_text = current_text[target_left_index - around_n_char:target_left_index]
 
@@ -249,6 +281,7 @@ def getTextAroundCrossPage(current_text: str, previous_text: str, next_text: str
         + ("\033[39m" if use_colour else "")                  \
         + right_around_text
 
+
 def highlightText(text: str, range_left: int, range_right: int) -> str:
     return "" \
         + text[0:range_left] \
@@ -256,6 +289,7 @@ def highlightText(text: str, range_left: int, range_right: int) -> str:
         + text[range_left:range_right] \
         + "\033[39m" \
         + text[range_right:len(text)]
+
 
 # {"rule_name": num_of_fulfilled}, example: {"rule_a": 3}, rule_a has 4 members, 3 fulfilled.
 file_check_reach_percentage_result: dict[str, list[int]] = dict()
