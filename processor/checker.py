@@ -20,7 +20,7 @@ class MatchResultInfo:
         self.nearby_text = nearby_text
 
 
-def checkDocument(pdf_path: str) -> dict[str, bool]:
+def checkDocument(pdf_path: str, skip_content_pages: bool = True) -> dict[str, bool]:
     """
     Check the whole document whether it fulfill requirement or not
     return {requirement_name: is_fulfilled} Example: {"statement_by_chairman": true}
@@ -34,41 +34,41 @@ def checkDocument(pdf_path: str) -> dict[str, bool]:
         global file_check_reach_percentage_result
         file_check_reach_percentage_result.clear()
 
-        skip_n_page = 1
+        skip_n_page = 2  # Contains first page
         have_found_content_page = False
-        skip_conten_page_finished = False
+        skip_content_page_finished = False
         content_checker = re.compile(r"(?:table\s+of\s+)contents?")
+
+        has_statement_by_chairman = False
 
         for page_index in range(len(pdf_file)):
             # Always read next page, shuffle previous
             previous_page_text, current_page_text, next_page_text = pdf_file.getPageAndNearby(page_index)
 
+            # Always search statement by chairman first, it might before content. Check until find it.
+            if not has_statement_by_chairman:
+                console.sublog(f"Try to find statement by chairman at page {page_index}.", colour_rgb="124dae")
+                is_found, match_info = checkAnyRegexFulFilled(
+                    statement_dict["statement_by_chairman"].check_rule, "statement_by_chairman",
+                    previous_page_text, current_page_text, next_page_text, page_index
+                )
+                if is_found:
+                    result_dict["statement_by_chairman"] = has_statement_by_chairman = True
+                    processMatchInfo(match_info, "statement_by_chairman")
+
             # Skip for "table of content" pages
             # crude: only skip first page matches "(?:table\sof\s)contents?", and its next page
-            # If content not skipped
-            if not skip_conten_page_finished:
-                # Check if already found first content page
-                if have_found_content_page:
-                    # Skip required pages
-                    if skip_n_page > 0:
-                        console.sublog(f"Skipping page {page_index}:", colour_rgb="f6ad49")
-                        console.sublog(current_page_text.replace("\n", "  ")[0:60])
-                        print()
-                        skip_n_page -= 1
-                        continue
-                    if skip_n_page == 0:  # Skip page finished
-                        console.sublog(f"No longer need to skip after page {page_index}:", colour_rgb="f6ad49")
-                        console.sublog(current_page_text.replace("\n", "  ")[0:60])
-                        print()
-                        skip_conten_page_finished = True
-                else:
-                    # Check if this page is content page
-                    have_found_content_page = (content_checker.search(current_page_text) != None)
-                    if have_found_content_page:  # this page is content
-                        console.sublog(f"Found content at page {page_index}:", colour_rgb="f6ad49")
-                        console.sublog(current_page_text.replace("\n", "  ")[0:60])
-                        print()
-                        continue
+            # If this function should skip potential content pages
+            if skip_content_pages and (not skip_content_page_finished):
+                should_skip_result, skip_content_page_finished, skip_n_page = shouldSkipThisPage(
+                    skip_content_page_finished, have_found_content_page, skip_n_page, content_checker,
+                    current_page_text, page_index, pdf_path
+                )
+                if type(should_skip_result) == bool and should_skip_result == True:
+                    have_found_content_page = True
+                    continue
+                elif type(should_skip_result) == dict:  # Skip failed, re-do scanning finished
+                    return should_skip_result
 
             # Check each page by all rules
             for rule_name in statement_dict.keys():
@@ -78,37 +78,88 @@ def checkDocument(pdf_path: str) -> dict[str, bool]:
 
                 # If not already true yet
                 check_rule = statement_dict[rule_name].check_rule
-                if type(check_rule) in rule_type_to_func_dict.keys():
+                is_placeholder = statement_dict[rule_name].placeholder
+                if (type(check_rule) in rule_type_to_func_dict.keys()):
+                    # If it is just placeholder, do not check
+                    if is_placeholder:
+                        continue
+
                     is_found, match_info = rule_type_to_func_dict[type(check_rule)](
                         check_rule, rule_name, previous_page_text, current_page_text, next_page_text, page_index
                     )
                     result_dict[rule_name] = is_found
                     if is_found:
-                        console.sublog("Found " + rule_name, colour_rgb="b19a00")
-                        if match_info != None:
-                            match_info: MatchResultInfo = match_info
-                            console.sublog(
-                                "- trigger text at page ", match_info.trigget_at_page, ":",
-                                colour_rgb="f7b977", sep=""
-                            )
-                            console.sublog("    " + match_info.trigger_text.replace("\n", " "))
-                            # If has nearby
-                            if match_info.nearby_text != None and match_info.nearby_at_page != None:
-                                console.sublog(
-                                    "- nearby text at page ", match_info.nearby_at_page, ":",
-                                    colour_rgb="f7b977", sep=""
-                                )
-                                console.sublog("    " + match_info.nearby_text.replace("\n", " "))
-
-                            print()  # Give a blank line to next "Found"
-                        else:  # match_info unfortunately wrong.
-                            console.err("Unexpected none match_info")
-                            raise NotImplementedError("match_info: ", match_info)
+                        processMatchInfo(match_info, rule_name)
                 else:  # Unknow check_rule type
                     console.err("Check rule type \"", type(check_rule), "\" not in rule_type_to_func_dict", sep="")
                     raise NotImplementedError(type(check_rule))
 
     return result_dict
+
+
+def processMatchInfo(match_info: MatchResultInfo, rule_name: str) -> None:
+    console.sublog("Found " + rule_name, colour_rgb="b19a00")
+    if match_info != None:
+        match_info: MatchResultInfo = match_info
+        console.sublog(
+            "- trigger text at page ", match_info.trigget_at_page, ":",
+            colour_rgb="f7b977", sep=""
+        )
+        console.sublog("    " + match_info.trigger_text.replace("\n", " "))
+        # If has nearby
+        if match_info.nearby_text != None and match_info.nearby_at_page != None:
+            console.sublog(
+                "- nearby text at page ", match_info.nearby_at_page, ":",
+                colour_rgb="f7b977", sep=""
+            )
+            console.sublog("    " + match_info.nearby_text.replace("\n", " "))
+
+        print()  # Give a blank line to next "Found"
+    else:  # match_info unfortunately wrong.
+        console.err("Unexpected none match_info")
+        raise NotImplementedError("match_info: ", match_info)
+
+
+def shouldSkipThisPage(skip_content_page_finished, have_found_content_page, skip_n_page,
+                       content_checker, current_page_text: str,
+                       page_index: int, pdf_path) -> tuple[bool, bool, int] | tuple[dict[str, bool], None, None]:
+    # Check if already found first content page
+    if have_found_content_page:
+        # Skip required pages
+        if skip_n_page > 0:
+            console.sublog(f"Skipping page {page_index}:", colour_rgb="ec6d51")
+            console.sublog(current_page_text.replace("\n", "  ")[0:60])
+            print()
+            skip_n_page -= 1
+            return (True, skip_content_page_finished, skip_n_page)
+        if skip_n_page == 0:  # Skip page finished
+            console.sublog(
+                f"No longer need to skip at page {page_index} and after:", colour_rgb="ec6d51"
+            )
+            console.sublog(current_page_text.replace("\n", "  ")[0:60])
+            print()
+            skip_content_page_finished = True
+            return (True, skip_content_page_finished, skip_n_page)
+    else:  # Have not found content page
+        # If content not found after 5 pages, redo it now
+        if page_index > 5:
+            console.sublog(
+                f"Maybe no table of content for file {pdf_path}. Redo without skipping...", colour_rgb="ec6d51"
+            )
+            return (checkDocument(pdf_path, skip_content_pages=False), None)
+
+        # Check if this page is content page
+        have_found_content_page = (content_checker.search(current_page_text) != None)
+        if have_found_content_page:  # this page is content
+            console.sublog(f"Found content at page {page_index}:", colour_rgb="ec6d51")
+            console.sublog(current_page_text.replace("\n", "  ")[0:60])
+        else:  # If not, check next page
+            console.sublog(
+                f"Page {page_index} seems not a content page, continue find it.", colour_rgb="ec6d51"
+            )
+            console.sublog(current_page_text.replace("\n", "  ")[0:60])
+        print()
+        return (True, skip_content_page_finished, skip_n_page)  # Whether is or not, this page should not be scanned
 
 
 def checkAnyRegexFulFilled(check_rule: AnyRegexFulfilled,
@@ -261,7 +312,8 @@ def getTextAroundCrossPage(current_text: str, previous_text: str, next_text: str
     left_around_text: str = None
     if target_left_index < around_n_char:
         # Include text from previous page
-        left_around_text = previous_text[-1 - (around_n_char - target_left_index):-1] + current_text[0:target_left_index]
+        left_around_text = previous_text[-1 - (around_n_char - target_left_index)
+                                               :-1] + current_text[0:target_left_index]
     else:
         left_around_text = current_text[target_left_index - around_n_char:target_left_index]
 

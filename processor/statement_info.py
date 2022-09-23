@@ -8,10 +8,12 @@ class ItemMatchingRule:
 class StatementInfo:
     position: tuple[int, int]
     check_rule: ItemMatchingRule
+    placeholder: bool
 
-    def __init__(self, position: tuple[int, int], check_rule: ItemMatchingRule) -> None:
+    def __init__(self, position: tuple[int, int], check_rule: ItemMatchingRule, placeholder: bool = False) -> None:
         self.position = position
         self.check_rule = check_rule
+        self.placeholder = placeholder
 
 
 class AnyRegexFulfilled(ItemMatchingRule):
@@ -79,7 +81,8 @@ statement_dict: dict[str, StatementInfo] = {
             "(?:letter|note|message)\\s+from\\s+.*\s+(?:ceo|president|chairman)?",
             # Endings
             "(?:regards?|sincere(?:ly)?),?"
-        ], percentage=48)
+        ], percentage=48),
+        placeholder=True
     ),
     "report_code_violation": StatementInfo(
         position=(0, 5),
@@ -158,13 +161,13 @@ statement_dict: dict[str, StatementInfo] = {
             r"gift.*\bnominal\b", r"gift.*\blogo\b",
         )
     ),
-    #"giftnominal": StatementInfo(
+    # "giftnominal": StatementInfo(
     #    position=(0, 22),
     #    check_rule=NearbyPageMatching(
     #        trigger_regexs=["gift"],
     #        search_nearby_regexs=["nominal", "logo"]
     #    )
-    #),
+    # ),
     "conflict_a": StatementInfo(
         position=(1, 3),
         check_rule=AnyRegexFulfilled("conflicts?\\s+of\\s+interest")
@@ -240,7 +243,7 @@ statement_dict: dict[str, StatementInfo] = {
     "assets_c": StatementInfo(
         position=(1, 15),
         check_rule=NearbyCharMatching(
-            trigger_regexs=["confidential" , r"\bdata\b"],
+            trigger_regexs=["confidential", r"\bdata\b"],
             search_nearby_regexs=["protect", "safeguard"],
             near_n_char=150
         )
@@ -263,9 +266,10 @@ statement_dict: dict[str, StatementInfo] = {
         position=(2, 5),
         check_rule=NearbyPageMatching(
             trigger_regexs=["accounting", "defe(?:r|rring)"],
-            search_nearby_regexs=["(?:follow|comply)\\s.+(?:law|polic|principle|gaap)","misclassifications", "improperly\\s+accelerating", "defe(?:r|rring)\\s+expenses", "defe(?:r|rring)\\s+revenues"],
-            )
-        
+            search_nearby_regexs=["(?:follow|comply)\\s.+(?:law|polic|principle|gaap)", "misclassifications",
+                                  "improperly\\s+accelerating", "defe(?:r|rring)\\s+expenses", "defe(?:r|rring)\\s+revenues"],
+        )
+
     ),
     "record_d": StatementInfo(
         position=(2, 6),
@@ -393,7 +397,7 @@ statement_dict: dict[str, StatementInfo] = {
         check_rule=NearbyPageMatching(
             trigger_regexs=["haras(?:s|sment)"],
             search_nearby_regexs=["tolerate", "forbidden", "prohibit"]
-            )
+        )
 
     ),
     "anti_a": StatementInfo(
@@ -474,16 +478,16 @@ statement_dict: dict[str, StatementInfo] = {
     "insider_b": StatementInfo(
         position=(4, 12),
         check_rule=NearbyPageMatching(
-            trigger_regexs=["confidential","insid(?:e|er)"],
+            trigger_regexs=["confidential", "insid(?:e|er)"],
             search_nearby_regexs=["personal\\s+gain", "personal\\s+profit"]
         )
     ),
     "insider_c": StatementInfo(
         position=(4, 13),
         check_rule=NearbyPageMatching(
-            trigger_regexs=["confidential","insid(?:e|er)"],
+            trigger_regexs=["confidential", "insid(?:e|er)"],
             search_nearby_regexs=["stock", "securit(?:y|ies)"]
-        )   
+        )
     ),
     "boycott_a": StatementInfo(
         position=(5, 3),
