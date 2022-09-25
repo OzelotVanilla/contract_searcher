@@ -10,8 +10,8 @@ from util.console import console
 console.info("Starting program")
 
 # Read each PDF file
-for pdf_file_path in ["./pdf/Xcel energy.pdf", ]:
-    # for pdf_file_path in getPDFFilePathGenerator("./pdf/"):
+# for pdf_file_path in ["./pdf/yahoo.pdf", ]:
+for pdf_file_path in getPDFFilePathGenerator("./pdf/"):
     # Name of result word file
     company_name = " ".join(os.path.split(pdf_file_path)[-1].split(".")[0:-1])
     result_word_file_name = company_name + ".docx"

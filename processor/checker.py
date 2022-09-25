@@ -36,6 +36,11 @@ def checkDocument(pdf_path: str,
         global file_check_reach_percentage_result
         file_check_reach_percentage_result.clear()
 
+        # If less than 20 pages, do not do skip content job
+        if len(pdf_file) <= 20:
+            console.warn(f"Too few pages ({len(pdf_file)} pages in this document) , cannot skip content!")
+            skip_content_pages = False
+
         skip_n_page = 2  # Contains first page
         have_found_content_page = False
         skip_content_page_finished = False
@@ -51,14 +56,16 @@ def checkDocument(pdf_path: str,
             next_page_text = next_page_text.replace("\n", " ")
 
             # Always search statement by chairman first, it might before content. Check until find it.
-            if not has_statement_by_chairman:
+            # If over 10 pages, ignore this job (consider not have that statement)
+            if not has_statement_by_chairman and page_index <= 10:
                 console.sublog(f"Try to find statement by chairman at page {page_index}.", colour_rgb="124dae")
                 is_found, match_info = checkAnyRegexFulFilled(
                     statement_dict["statement_by_chairman"].check_rule, "statement_by_chairman",
                     previous_page_text, current_page_text, next_page_text, page_index
                 )
+                # Update result
+                result_dict["statement_by_chairman"] = has_statement_by_chairman = is_found
                 if is_found:
-                    result_dict["statement_by_chairman"] = has_statement_by_chairman = True
                     processMatchInfo(match_info, "statement_by_chairman")
 
             # Skip for "table of content" pages

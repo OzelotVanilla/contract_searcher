@@ -49,7 +49,11 @@ class PDFFile:
                     self.text_cache[index] = text
 
     def __len__(self) -> int:
-        return len(self.pdf_file.pages)
+        match type(self.pdf_file):
+            case pdfplumber.PDF:
+                return len(self.pdf_file.pages)
+            case fitz.Document:
+                return len(self.pdf_file)
 
     def __enter__(self) -> "PDFFile":
         return self
