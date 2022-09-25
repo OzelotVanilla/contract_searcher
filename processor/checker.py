@@ -44,6 +44,9 @@ def checkDocument(pdf_path: str, skip_content_pages: bool = True) -> dict[str, b
         for page_index in range(len(pdf_file)):
             # Always read next page, shuffle previous
             previous_page_text, current_page_text, next_page_text = pdf_file.getPageAndNearby(page_index)
+            previous_page_text = previous_page_text.replace("\n", " ")
+            current_page_text = current_page_text.replace("\n", " ")
+            next_page_text = next_page_text.replace("\n", " ")
 
             # Always search statement by chairman first, it might before content. Check until find it.
             if not has_statement_by_chairman:
@@ -102,14 +105,14 @@ def processMatchInfo(match_info: MatchResultInfo, rule_name: str) -> None:
     if match_info != None:
         match_info: MatchResultInfo = match_info
         console.sublog(
-            "- trigger text at page ", match_info.trigget_at_page, ":",
+            f"- trigger text at page {match_info.trigget_at_page} (in document {match_info.trigget_at_page + 1}):",
             colour_rgb="f7b977", sep=""
         )
         console.sublog("    " + match_info.trigger_text.replace("\n", " "))
         # If has nearby
         if match_info.nearby_text != None and match_info.nearby_at_page != None:
             console.sublog(
-                "- nearby text at page ", match_info.nearby_at_page, ":",
+                f"- nearby text at page {match_info.nearby_at_page} (in document {match_info.nearby_at_page + 1}):",
                 colour_rgb="f7b977", sep=""
             )
             console.sublog("    " + match_info.nearby_text.replace("\n", " "))
@@ -217,9 +220,15 @@ def checkNearbyPagesMatching(check_rule: NearbyPageMatching, rule_name: str,
             # Search nearby pages
             for nearby_regex in check_rule.search_nearby_regexs:
                 # Search nearby in two nearby pages
-                previous_result = nearby_regex.search(previous_page_text)
+                previous_result,next_result=None,None # If no need to search before/after
                 current_result = nearby_regex.search(current_page_text)
-                next_result = nearby_regex.search(next_page_text)
+
+                # If need to search previous or next page
+                if check_rule.search_page_before:
+                    previous_result = nearby_regex.search(previous_page_text)
+                if check_rule.search_page_after:
+                    next_result = nearby_regex.search(next_page_text)
+                
                 # If found corresponding nearby
                 if previous_result != None or current_result != None or next_result != None:
                     trigger_range = trigger_result.span()
@@ -257,9 +266,12 @@ def checkNearbyCharMatching(check_rule: NearbyCharMatching, rule_name: str,
                             previous_page_text: str, current_page_text: str, next_page_text: str,
                             page_num: int) -> tuple[bool, MatchResultInfo | None]:
     for trigger_regex in check_rule.trigger_regexs:
-        # If found, check if words around
-        trigger_result = trigger_regex.search(current_page_text)
-        if trigger_result != None:
+        # Possible for having multiple match result in same page
+        trigger_results = re.finditer(trigger_regex, current_page_text)
+
+        # If found, check each result, if words around
+        # If not found, this for-loop will be ignored
+        for trigger_result in trigger_results:
             # Get nearby n char
             trigger_range = trigger_result.span()
             text_nearby = getTextAroundCrossPage(
@@ -270,7 +282,7 @@ def checkNearbyCharMatching(check_rule: NearbyCharMatching, rule_name: str,
 
             # Check whether some regex can found result in it
             for nearby_regex in check_rule.search_nearby_regexs:
-                nearby_result = nearby_regex.search(text_nearby)
+                nearby_result = nearby_regex.search(text_nearby.replace("ﬃ", "ffi")) # Special fix for one document
                 # If found result
                 if nearby_result != None:
                     nearby_range = nearby_result.span()
@@ -281,7 +293,7 @@ def checkNearbyCharMatching(check_rule: NearbyCharMatching, rule_name: str,
                             trigger_range[0], trigger_range[1]
                         ),
                         nearby_at_page=page_num,
-                        nearby_text=highlightText(text_nearby, nearby_range[0], nearby_range[1])
+                        nearby_text=getTextAroundInPage(text_nearby, nearby_range[0], nearby_range[1])
                     )
 
                     return (True, match_info)
@@ -301,7 +313,7 @@ def getTextAroundInPage(text: str, target_left_index: int, target_right_index: i
         + text[text_around_start:target_left_index]        \
         + ("\033[38;2;62;179;112m" if use_colour else "")  \
         + text[target_left_index:target_right_index]       \
-        + ("\033[39m" if use_colour else "")           \
+        + ("\033[39m" if use_colour else "")               \
         + text[target_right_index:text_around_end]
 
 
@@ -319,12 +331,12 @@ def getTextAroundCrossPage(current_text: str, previous_text: str, next_text: str
 
     # Right side also
     right_around_text: str = None
-    if len(current_text) - 60 < target_right_index:
+    if len(current_text) - around_n_char < target_right_index:
         # Include text from next page
         right_around_text = current_text[target_right_index:-1] \
-            + next_text[0:60 - (len(current_text) - target_right_index)]
+            + next_text[0:around_n_char - (len(current_text) - target_right_index)]
     else:
-        right_around_text = current_text[target_right_index:target_right_index + 60 + 1]
+        right_around_text = current_text[target_right_index:target_right_index + around_n_char + 1]
 
     return ""                                                 \
         + left_around_text                                    \
