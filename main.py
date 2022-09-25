@@ -2,6 +2,7 @@ import os
 import shutil
 from processor.checker import checkDocument
 from processor.outputer import writeFinalResultToExcel, writeResultToWord
+from processor.reader import ReaderType
 from util.read_file import getPDFFilePathGenerator
 from util.console import console
 
@@ -10,7 +11,7 @@ console.info("Starting program")
 
 # Read each PDF file
 for pdf_file_path in ["./pdf/Xcel energy.pdf", ]:
-#for pdf_file_path in getPDFFilePathGenerator("./pdf/"):
+    # for pdf_file_path in getPDFFilePathGenerator("./pdf/"):
     # Name of result word file
     company_name = " ".join(os.path.split(pdf_file_path)[-1].split(".")[0:-1])
     result_word_file_name = company_name + ".docx"
@@ -21,7 +22,7 @@ for pdf_file_path in ["./pdf/Xcel energy.pdf", ]:
     shutil.copy("./CoE Template 2.docx", result_word_file_path)
 
     # Get checking result, and write to word file
-    result_dict = checkDocument(pdf_file_path)
+    result_dict = checkDocument(pdf_file_path, ReaderType.type_pymupdf)
 
     # Write result to doc
     writeResultToWord(result_word_file_path, result_dict, company_name)

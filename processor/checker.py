@@ -1,6 +1,6 @@
 import re
 from typing import Callable
-from processor.reader import PDFFile, getReadByPagesGenerator
+from processor.reader import PDFFile, ReaderType, getReadByPagesGenerator
 from processor.statement_info import ItemMatchingRule, AnyRegexFulfilled, ReachPercentage, NearbyPageMatching, NearbyCharMatching
 
 from processor.statement_info import statement_dict
@@ -20,7 +20,9 @@ class MatchResultInfo:
         self.nearby_text = nearby_text
 
 
-def checkDocument(pdf_path: str, skip_content_pages: bool = True) -> dict[str, bool]:
+def checkDocument(pdf_path: str,
+                  skip_content_pages: bool = True,
+                  reader_type: ReaderType = ReaderType.type_pdfplumber) -> dict[str, bool]:
     """
     Check the whole document whether it fulfill requirement or not
     return {requirement_name: is_fulfilled} Example: {"statement_by_chairman": true}
@@ -29,7 +31,7 @@ def checkDocument(pdf_path: str, skip_content_pages: bool = True) -> dict[str, b
 
     # If find near, search may cross the page.
     # Read pages by pages until end
-    with PDFFile(pdf_path) as pdf_file:
+    with PDFFile(pdf_path, reader_type) as pdf_file:
         # Clear previous reach_percentage dict
         global file_check_reach_percentage_result
         file_check_reach_percentage_result.clear()
@@ -220,7 +222,7 @@ def checkNearbyPagesMatching(check_rule: NearbyPageMatching, rule_name: str,
             # Search nearby pages
             for nearby_regex in check_rule.search_nearby_regexs:
                 # Search nearby in two nearby pages
-                previous_result,next_result=None,None # If no need to search before/after
+                previous_result, next_result = None, None  # If no need to search before/after
                 current_result = nearby_regex.search(current_page_text)
 
                 # If need to search previous or next page
@@ -228,7 +230,7 @@ def checkNearbyPagesMatching(check_rule: NearbyPageMatching, rule_name: str,
                     previous_result = nearby_regex.search(previous_page_text)
                 if check_rule.search_page_after:
                     next_result = nearby_regex.search(next_page_text)
-                
+
                 # If found corresponding nearby
                 if previous_result != None or current_result != None or next_result != None:
                     trigger_range = trigger_result.span()
@@ -282,7 +284,7 @@ def checkNearbyCharMatching(check_rule: NearbyCharMatching, rule_name: str,
 
             # Check whether some regex can found result in it
             for nearby_regex in check_rule.search_nearby_regexs:
-                nearby_result = nearby_regex.search(text_nearby.replace("ﬃ", "ffi")) # Special fix for one document
+                nearby_result = nearby_regex.search(text_nearby.replace("ﬃ", "ffi"))  # Special fix for one document
                 # If found result
                 if nearby_result != None:
                     nearby_range = nearby_result.span()
@@ -324,8 +326,7 @@ def getTextAroundCrossPage(current_text: str, previous_text: str, next_text: str
     left_around_text: str = None
     if target_left_index < around_n_char:
         # Include text from previous page
-        left_around_text = previous_text[-1 - (around_n_char - target_left_index)
-                                               :-1] + current_text[0:target_left_index]
+        left_around_text = previous_text[-1 - (around_n_char - target_left_index):-1] + current_text[0:target_left_index]
     else:
         left_around_text = current_text[target_left_index - around_n_char:target_left_index]
 
