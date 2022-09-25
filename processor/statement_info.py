@@ -91,7 +91,7 @@ statement_dict: dict[str, StatementInfo] = {
     "report_code_violation": StatementInfo(
         position=(0, 5),
         check_rule=AnyRegexFulfilled(
-            "investigate", "report.+(?:concern|issue)", "hotline", "anonymous", "retaliation"
+            "investigate", "report.{1,30}(?:concern|issue)", "hotline", "anonymous", "retaliation"
         )
     ),
     "sox_406": StatementInfo(
@@ -203,7 +203,8 @@ statement_dict: dict[str, StatementInfo] = {
         check_rule=NearbyPageMatching(
             trigger_regexs=["conflicts?.{1,5}of.{1,5}interests?"],
             search_nearby_regexs=[
-                "serv(?:e|ing|ice).{1,15}as.+(?:director|officer|partner|consult|contactor|competitor|supervisor|supervisory|supervising)", "outside.{1,15} employ.+(?:director|officer|partner|consult|contactor|competitor|supervisor|supervisory|supervising)"
+                "serv(?:e|ing|ice).{1,15}as.{1,10}(?:director|officer|partner|consult|contactor|competitor|supervisor|supervisory|supervising)",
+                "outside.{1,15}employ.{1,30}(?:director|officer|partner|consult|contactor|competitor|supervisor|supervisory|supervising)"
             ]
         )
     ),
@@ -212,7 +213,8 @@ statement_dict: dict[str, StatementInfo] = {
         check_rule=NearbyPageMatching(
             trigger_regexs=["conflicts?.{1,10}of.{1,10}interests?"],
             search_nearby_regexs=[
-                "serv(?:e|ing|ice).{1,20} as.+(?:broker|finder|intermediary|third.{1,5}party)", "outside.{1,15} employ.+(?:broker|finder|intermediary|third.{1,5}party)"
+                "serv(?:e|ing|ice).{1,20} as.{1,10}(?:broker|finder|intermediary|third.{1,5}party)",
+                "outside.{1,15} employ.{1,30}(?:broker|finder|intermediary|third.{1,5}party)"
             ]
 
         )
@@ -273,7 +275,7 @@ statement_dict: dict[str, StatementInfo] = {
         position=(2, 5),
         check_rule=NearbyPageMatching(
             trigger_regexs=["accounting", "defe(?:r|rring)"],
-            search_nearby_regexs=["(?:follow|compl(?:y|iance))\\s.+(?:law|polic|principle|gaap)", "misclassifications",
+            search_nearby_regexs=["(?:follow|compl(?:y|iance))\\s.{1,10}(?:law|polic|principle|gaap)", "misclassifications",
                                   "improperly.{1,30}accelerating", "defe(?:r|rring).{1,30}expenses", "defe(?:r|rring).{1,30}revenues"],
             search_page_before=False, search_page_after=False                      
         )
@@ -438,7 +440,7 @@ statement_dict: dict[str, StatementInfo] = {
         check_rule=NearbyPageMatching(
             trigger_regexs=["antitrust"],
             search_nearby_regexs=[
-                "measure.+(violate)", "ensure.+(law)",
+                "measure.{1,50}(violate)", "ensure.{1,30}(law)",
                 r"(?:follow|compl(?:y|iance))\s+.{1,40}(?:law)", "not.{1,15}violat(?:e|ion).{1,15}law", "price.{1,10}fix(?:ing)?", 
             ],
             search_page_before=False, search_page_after=False
@@ -464,7 +466,7 @@ statement_dict: dict[str, StatementInfo] = {
         position=(4, 4),
         check_rule=NearbyCharMatching(
             trigger_regexs=["\\bsale\\b","\\brebate\\b", "\\bdiscount\\b", "\\bcredit\\b", "\\ballowance\\b.{1,15}programs?"],
-            search_nearby_regexs=["(?:follow|compl(?:y|iance)).+(?:law|currency|regulation)"],
+            search_nearby_regexs=["(?:follow|compl(?:y|iance)).{1,30}(?:law|currency|regulation)"],
             near_n_char=120
         )
     ),
@@ -479,8 +481,8 @@ statement_dict: dict[str, StatementInfo] = {
     "inducement_c": StatementInfo(
         position=(4, 6),
         check_rule=NearbyPageMatching(
-            trigger_regexs=["payment.+(sale)"],
-            search_nearby_regexs=["within.+(country, state, federal)"],
+            trigger_regexs=["payment.{1,30}(sale)"],
+            search_nearby_regexs=["within.{1,40}(country, state, federal)"],
             search_page_before=False, search_page_after=False
 
         )
@@ -488,8 +490,8 @@ statement_dict: dict[str, StatementInfo] = {
     "inducement_d": StatementInfo(
         position=(4, 7),
         check_rule=NearbyPageMatching(
-            trigger_regexs=["payment.+(purchase)"],
-            search_nearby_regexs=["within.+(country, \\bstate\\b, \\bfederal\\b)"],
+            trigger_regexs=["payment.{1,30}(purchase)"],
+            search_nearby_regexs=["within.{1,40}(country, \\bstate\\b, \\bfederal\\b)"],
             search_page_before=False, search_page_after=False
 
         )
@@ -547,14 +549,14 @@ statement_dict: dict[str, StatementInfo] = {
         position=(5, 6),
         check_rule=NearbyPageMatching(
             trigger_regexs=["\\bdata\\b","information"],
-            search_nearby_regexs=["(?:collect|get|gather).+(competitor)"]
+            search_nearby_regexs=["(?:collect|get|gather).{1,50}(competitor)"]
         )
     ),
     "competitive_b": StatementInfo(
         position=(5, 7),
         check_rule=NearbyPageMatching(
             trigger_regexs=["\\bdata\\b","information"],
-            search_nearby_regexs=["prohibit.+(competitor)","(?:gather|collect|get).s+(?:improper|illegal)"]
+            search_nearby_regexs=["prohibit.{1,60}(competitor)","(?:gather|collect|get).{1,60}(?:improper|illegal)"]
         )
     ),
     "polotical2_a": StatementInfo(
@@ -568,8 +570,9 @@ statement_dict: dict[str, StatementInfo] = {
         position=(5, 12),
         check_rule=NearbyPageMatching(
             trigger_regexs=["political"],
-            search_nearby_regexs=["(?:company|organization|corporat(?:e|ion)).{1,15}(?:resource|fund).+(sale|induce|influence)", 
-            "on.{1,10}behalf.{1,5}of.+(?:company|organization|corporat(?:e|ion))"]
+            search_nearby_regexs=[
+            "(?:company|organization|corporat(?:e|ion)).{1,15}(?:resource|fund).{1,50}(sale|induce|influence)", 
+            "on.{1,10}behalf.{1,5}of.{1,20}(?:company|organization|corporat(?:e|ion))"]
         )
     ),
     "estate_a": StatementInfo(
@@ -577,7 +580,7 @@ statement_dict: dict[str, StatementInfo] = {
         position=(5, 14),
         check_rule=NearbyCharMatching(
             trigger_regexs=["estate", "natural.{1,5}resources"],
-            search_nearby_regexs=["compet(?:e|ing).s+(?:company|organization|corporat(?:e|ion))"],
+            search_nearby_regexs=["compet(?:e|ing).{1, 80}(?:company|organization|corporat(?:e|ion))"],
             near_n_char=120
         )
 
